@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Game balap mobil 2d buatan anak pplg</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <style>
+      body {
+        background-color: #0f172a;
+        color: #f8fafc;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 15px;
+        user-select: none;
+      }
+
+      h2 {
+        color: #38bdf8;
+        margin: 0 0 8px 0;
+        font-size: 20px;
+        letter-spacing: 1px;
+      }
+
+      .info-bar {
+        display: flex;
+        justify-content: space-between;
+        width: 300px;
+        background-color: #1e293b;
+        padding: 8px 14px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        font-weight: bold;
+        font-size: 14px;
+        border: 1px solid #334155;
+        box-sizing: border-box;
+      }
+
+      canvas {
+        background-color: #1e293b;
+        border: 3px solid #38bdf8;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .kontrol {
+        display: flex;
+        gap: 15px;
+        margin-top: 14px;
+        width: 300px;
+      }
+
+      button {
+        flex: 1;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: bold;
+        background-color: #38bdf8;
+        color: #0f172a;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      button:active {
+        background-color: #0284c7;
+        color: #ffffff;
+      }
+
+      #btnRestart {
+        display: none;
+        background-color: #22c55e;
+        margin-top: 10px;
+        width: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>CAR STREET SKOR</h2>
+    <div class="info-bar">
+      <span>Skor: <span id="skor">0</span></span>
+      <span>Rekor: <span id="rekor">0</span></span>
+    </div>
+
+    <canvas id="gameCanvas" width="300" height="420"></canvas>
+
+    <div class="kontrol">
+      <button onclick="geserKiri()">◀ KIRI</button>
+      <button onclick="geserKanan()">KANAN ▶</button>
+    </div>
+    <button id="btnRestart" onclick="mulaiUlang()">MAIN LAGI ↻</button>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      let jalurPemain = 1;
+      let skor = 0;
+      let rekor = 0;
+      let kecepatan = 4;
+      let gameOver = false;
+      let garisOffset = 0;
+
+      let musuhJalur = Math.floor(Math.random() * 3);
+      let musuhY = -80;
+
+      function posisiX(jalur) {
+        if (jalur === 0) return 30;
+        if (jalur === 1) return 130;
+        return 230;
+      }
+
+      function geserKiri() {
+        if (!gameOver && jalurPemain > 0) {
+          jalurPemain = jalurPemain - 1;
+        }
+      }
+
+      function geserKanan() {
+        if (!gameOver && jalurPemain < 2) {
+          jalurPemain = jalurPemain + 1;
+        }
+      }
+
+      function gambarMobil(x, y, warnaBodi, warnaKaca) {
+        ctx.fillStyle = warnaBodi;
+        ctx.fillRect(x, y, 40, 68);
+
+        ctx.fillStyle = warnaKaca;
+        ctx.fillRect(x + 6, y + 14, 28, 14);
+        ctx.fillRect(x + 8, y + 44, 24, 10);
+
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillRect(x + 4, y + 2, 8, 4);
+        ctx.fillRect(x + 28, y + 2, 8, 4);
+      }
+
+      function gambarJalan() {
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#64748b";
+        for (let y = -40; y < canvas.height; y += 40) {
+          ctx.fillRect(98, y + garisOffset, 4, 20);
+          ctx.fillRect(198, y + garisOffset, 4, 20);
+        }
+      }
+
+      function update() {
+        if (gameOver) return;
+
+        gambarJalan();
+
+        garisOffset += kecepatan;
+        if (garisOffset >= 40) garisOffset = 0;
+
+        const pemainX = posisiX(jalurPemain);
+        const pemainY = 330;
+        gambarMobil(pemainX, pemainY, "#f8fafc", "#1e293b");
+
+        musuhY += kecepatan;
+        const musuhX = posisiX(musuhJalur);
+        gambarMobil(musuhX, musuhY, "#ef4444", "#450a0a");
+
+        if (
+          jalurPemain === musuhJalur &&
+          musuhY + 62 > pemainY &&
+          musuhY < pemainY + 62
+        ) {
+          gameOver = true;
+          ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+          ctx.fillRect(0, 150, canvas.width, 110);
+          ctx.fillStyle = "#ef4444";
+          ctx.font = "bold 26px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText("TABRAKAN!", canvas.width / 2, 195);
+          ctx.fillStyle = "#f8fafc";
+          ctx.font = "15px Arial";
+          ctx.fillText("Skor Akhir: " + skor, canvas.width / 2, 225);
+          document.getElementById("btnRestart").style.display = "block";
+          return;
+        }
+
+        if (musuhY > canvas.height) {
+          musuhY = -80;
+          musuhJalur = Math.floor(Math.random() * 3);
+          skor += 10;
+          document.getElementById("skor").innerText = skor;
+          if (skor > rekor) {
+            rekor = skor;
+            document.getElementById("rekor").innerText = rekor;
+          }
+          if (skor % 50 === 0 && kecepatan < 12) {
+            kecepatan += 0.7;
+          }
+        }
+
+        requestAnimationFrame(update);
+      }
+
+      function mulaiUlang() {
+        jalurPemain = 1;
+        skor = 0;
+        kecepatan = 4;
+        gameOver = false;
+        musuhJalur = Math.floor(Math.random() * 3);
+        musuhY = -80;
+        document.getElementById("skor").innerText = "0";
+        document.getElementById("btnRestart").style.display = "none";
+        update();
+      }
+
+      update();
+    </script>
+  </body>
+</html>
